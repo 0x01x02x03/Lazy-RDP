@@ -1,6 +1,6 @@
 #!/bin/bash
 # NOTE: YOU ARE FREE TO COPY,MODIFY,REUSE THE SOURCE CODE FOR EDUCATIONAL PURPOSE ONLY.
-ver=1.21
+ver=1.25
 clear
 ##########################################COLOR######################################
 colorbase="\E[0m"
@@ -15,23 +15,26 @@ CLEARALL ()
 {
 rm -rf Results/ paused.conf list all_results 2> /dev/null
 }
-
 ######################################################################################
 CHECKDISTR ()
 {
 distr=$(cat /etc/*-release | awk -F'=' '/DISTRIB_CODENAME=/ {print $2}')
+distrp=$(cat /etc/*-release | awk -F'=' '/DISTRIB_ID=/ {print $2}')
 	if [ "$distr" = "sana" ]; then
 	cat /etc/apt/sources.list > /etc/apt/sources.list_lazybak
 		echo "deb http://old.kali.org/kali sana main non-free contrib" > /etc/apt/sources.list
 	elif [ "$distr" = "kali-rolling" ]; then
 	cat /etc/apt/sources.list > /etc/apt/sources.list_lazybak
 		echo "deb http://http.kali.org/kali kali-rolling main contrib non-free" > /etc/apt/sources.list
+	elif [ "$distrp" = "Parrot" ]; then
+	cat /etc/apt/sources.list > /etc/apt/sources.list_lazybak
+		echo "deb http://archive.parrotsec.org/parrot parrot main contrib non-free" > /etc/apt/sources.list
+	
 	else
-		echo -e "$aquamarine[Скрипт тестировался только для $red[Kali Linux2]$aquamarine. Вы можете самостоятельно изменить код скрипта для своей ОС.]$colorbase"
-		echo -e "$aquamarine[The script was tested only for $red[Kali Linux2]$aquamarine. You are free to modify the code for your operating system]$colorbase"
+		echo -e "$aquamarine[Скрипт тестировался только для $red[Kali Linux2 и ParrotSec]$aquamarine. Вы можете самостоятельно изменить код скрипта для своей ОС.]$colorbase"
+		echo -e "$aquamarine[The script was tested only for $red[Kali Linux2 & ParrotSec]$aquamarine. You are free to modify the code for your operating system]$colorbase"
 	exit 1
 fi
-
 }
 ######################################################################################
 CHECKDEPEND0 ()
@@ -46,7 +49,27 @@ depend=$(dpkg -s masscan  | grep 'Status' | awk -F':' '/Status: / {print $2}')
 		echo    "Требующийся пакет MASSCAN не установлен. Установить?"
                 read -p "The required package MASSCAN is not installed Install?[Y][N]" yn
 			case $yn in
-			[Yy]* ) apt-get update -y && apt-get upgrade -y && apt-get install masscan -y; break;;
+			[Yy]* ) apt-get update -y && apt-get dist-upgrade -y; apt install masscan -y; break;;
+			[Nn]* ) exit;;
+			* ) echo "Enter answer [Y] or [N] ";;
+		esac
+	done
+fi
+
+}
+######################################################################################
+CHECKDEPEND1 ()
+{
+depend=$(dpkg -s nmap | grep 'Status' | awk -F':' '/Status: / {print $2}')
+	if [ "$depend" = " install ok installed" ]; then
+		clear 
+			else
+			echo -e "$aquamarine"
+		while true; do
+		echo    "Требующийся пакет nmap не установлен. Установить?"
+                read -p "The required package nmap is not installed Install?[Y][N]" yn
+			case $yn in
+			[Yy]* ) apt-get update -y && apt-get dist-upgrade -y; apt install nmap -y; break;;
 			[Nn]* ) exit;;
 			* ) echo "Enter answer [Y] or [N] ";;
 		esac
@@ -66,7 +89,7 @@ depend=$(dpkg -s freerdp-x11 | grep 'Status' | awk -F':' '/Status: / {print $2}'
 		echo    "Требующийся пакет FreeRDP не установлен. Установить?"
                 read -p "The required package FreeRDP is not installed Install?[Y][N]" yn
 			case $yn in
-			[Yy]* ) apt-get update -y && apt-get upgrade -y && apt-get install freerdp-x11 libfreerdp-plugins-standard -y; break;;
+			[Yy]* ) apt-get update -y && apt-get dist-upgrade -y; apt install freerdp-x11 libfreerdp-plugins-standard remmina -y; break;;
 			[Nn]* ) exit;;
 			* ) echo "Enter answer [Y] or [N] ";;
 		esac
@@ -80,6 +103,7 @@ fi
 CLEARALL
 CHECKDISTR
 CHECKDEPEND0
+CHECKDEPEND1
 CHECKDEPEND
 cat /etc/apt/sources.list_lazybak>/etc/apt/sources.list
 rm -rf /etc/apt/sources.list_lazybak 2> /dev/null
@@ -89,7 +113,7 @@ clear
 echo -e       "$grey                                 +--------------------------------------+" 
 echo -e       "$grey                                 |             Auto  Script             |"
 echo -e "$aquamarine                                 |     by GetDrive & hackers Union      |" 
-echo -e        "$red                                 |             Version 1.21             |"
+echo -e        "$red                                 |             Version 1.25             |"
 #echo -e        "$red                                 |$colorbase https://github.com/getdrive/Lazy-RDP$red |"
 echo -e        "$red                                 +--------------------------------------+ $colorbase"
 #####################################CHECKLANGUAGE####################################
@@ -326,7 +350,7 @@ while rate_f
 do
 	if [[ $rate -gt 119 && $rate -lt 30001 ]];
 		then
-echo -e "Значение rate установлено $rate$green"
+echo -e "Значение rate установлено $rate $green"
 echo ""
 
 break
@@ -363,14 +387,25 @@ else
 
 if [ "$menuoption" = "2" ]; then
 echo -e "$aquamarine**************************************************************************************************$green"
-read -p "*Введите путь к файлу с диапазонами IP {list.txt,list..& etc.} : " listname
+read -p "*Введите путь к файлу с диапазонами IP {listip.txt,listip..& etc.} : " listname
 
+#clear
+echo -e " $colorbase              +-----------------------------------------------------------------------+"   
+echo -e "               |   $grey                            1.$yellow Nmap$colorbase                                 |";
+echo -e "               |   $grey                            2.$yellow Masscan$colorbase                              |";
+echo -e "               +-----------------------------------------------------------------------+"
+read -p "                                            Выберите сканер : " scan
+echo -e "$red-------------------------------------------------------------------------------"
 clear
 echo -e "$red---------------------------------------------------------------------------------------------------------$colorbase"
 echo -e "$aquamarine                                          Идет поиск открытых RDP.$colorbase"
 echo -e "$red---------------------------------------------------------------------------------------------------------$colorbase"
 echo -e "$yellow*Для выхода из режима сканирования $red'CTRL+C'$colorbase"
-
+if [ "$scan" = "1" ]; then
+nmap -Pn -sS -iL $listname -p $port --open | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" > open3389
+trap 'echo "Выход в Главное меню"; ./src/rdp_brute.sh; exit; ./rdp_brute.sh' 2
+CHECKFILERU
+	else
 rate_f () {
 read -p "Масимальное количество запросов в секунду {120-30000} : " raten
 echo ""
@@ -380,21 +415,21 @@ while rate_f
 do
 	if [[ $rate -gt 119 && $rate -lt 30001 ]];
 		then
-echo -e "Значение rate установлено $rate$green"
+echo -e "Значение rate установлено $rate $green"
 echo ""
 
 break
 		
 		else		
-echo -e "$red                                     Значение должно быть от 120 до 30000$colorbase"
+echo -e "$red                                   Значение должно быть от 120 до 30000$colorbase"
 echo ""
 sleep 1.7
 clear
 fi
 done
 
-masscan -p $port -iL listname --open-only --max-rate $rate | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" > open3389
-
+masscan -p $port -iL $listname --open-only --max-rate $rate | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" > open3389
+fi
 trap 'echo "Выход в Главное меню"; ./src/rdp_brute.sh; exit; ./rdp_brute.sh' 2
 CHECKFILERU
 
